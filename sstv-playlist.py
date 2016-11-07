@@ -1,369 +1,474 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-'''generate an m3u8 playlist with your SmoothStreamsTV credentials'''
+'''generate m3u8 and xspf playlists with your SmoothStreamsTV credentials'''
 
 from getpass import getpass
 from json import loads, dumps
 from os import path
-from urllib import urlopen, urlencode
+from urllib.request import urlopen
+from urllib.parse import urlencode
+from xml.sax.saxutils import escape
+import urllib.request
+import os.path
 import time
+import json
+import argparse
+import re
 
 __appname__ = 'SSTV-playlist'
-__author__ = 'Stevie Howard (stvhwrd)'
-__copyright__ = 'Copyright 2016, Stevie Howard'
-__credits__ = ['Stevie Howard']
+__author__ = 'A few dudes'
+__version__ = '0.4beta'
 __license__ = 'MIT'
-__version__ = '0.1beta'
-__maintainer__ = 'Stevie Howard'
-__email__ = 'stvhwrd@uvic.ca'
-__status__ = 'Beta'
 
+config = { }
 
 greeting = '''
-WELCOME to the SmoothStreamsTV playlist generator!
+SmoothStreamsTV playlist generator
 
-This program will generate an .m3u8 playlist file with all available channels
-for the SmoothStreamsTV IPTV provider, playable in media players and browsers.
-Please note: channel names/numbers are sourced from SmoothStreamsTV,
-and current as of September 25, 2016.
+Generates .m3u8 and .xspf playlist files with all channels that are airing programming at the execution time. Currently the playlist generates sessions that are valid for about 4 hours. These files are playable in media players and browsers.
 '''
 
+class programinfo:
+	description = ""
+	channel = 0
+	channelname = ""
+	height = 0
+	endtime = ""
+	_title = ""
+	_category = ""
+	_quality = ""
+	_language = ""
+	
+	def get_title(self):
+		if len(self._title) == 0:
+			return ("none " + self.endtime).strip()
+		else:
+			return (self._title + " " + self.quality + " " + self.endtime).replace("  ", " ").strip()
+	def set_title(self, title):
+		self._title = title
+		if len(self._category) == 0:
+			if title.startswith("NHL") or title.startswith("Champions Hockey"):
+				self._category = "Ice Hockey"
+			elif title.startswith("UEFA") or title.startswith("EPL") or title.startswith("Premier League") or title.startswith("La Liga") or title.startswith("Bundesliga") or title.startswith("Serie A"):
+				self._category = "World Football"
+			elif title.startswith("MLB"):
+				self._category = "Baseball"
+			elif title.startswith("MMA") or title.startswith("UFC"):
+				self._category = "Boxing + MMA"
+			elif title.startswith("NCAAF") or title.startswith("CFB"):
+				self._category = "NCAAF"
+			elif title.startswith("ATP"):
+				self._category = "Tennis"
+			elif title.startswith("WWE"):
+				self._category = "Wrestling"
+			elif title.startswith("NFL") or title.startswith("NBA"):
+				self._category = title.split(" ")[0].replace(":", "").strip()
+		elif self._category == "American Football" and title.startswith("NFL"):
+			self._category = "NFL"
+	title = property(get_title, set_title)
+	
+	def get_category(self):
+		if len(self._category) == 0 and (self.title.lower().find("news") or self.description.lower().find("news")) > -1:
+			return "News"
+		else:
+			return self._category
+	def set_category(self, category):
+		if category == "tv":
+			self._category = ""
+		else:
+			self._category = category
+	category = property(get_category, set_category)
+	
+	def get_language(self):
+		return self._language
+	def set_language(self, language):
+		if language.upper() == "US":
+			self._language = ""
+		else:
+			self._language = language.upper()
+	language = property(get_language, set_language)
+	
+	def get_quality(self):
+		return self._quality
+	def set_quality(self, quality):
+		if quality.endswith("x1080"):
+			self._quality = "1080i"
+			self.height = 1080
+		elif quality.endswith("x720") or quality.lower() == "720p":
+			self._quality = "720p"
+			self.height = 720
+		elif quality.endswith("x540") or quality.lower() == "hqlq":
+			self._quality = "540p"
+			self.height = 540
+		elif quality.find("x") > 2:
+			self._quality = quality
+			self.height = int(quality.split("x")[1])
+		else:
+			self._quality = quality
+			self.height = 0
+	quality = property(get_quality, set_quality)
+
+	def get_album(self):
+		if self._quality.upper() == "HQLQ" and self.channelname.upper().find(" 720P") > -1:
+			self._quality = "720p"
+		return (self._category + " " + self.quality + " " + self._language).strip()
+	album = property(get_album)
 
 def main():
-    # ENTER YOUR CREDENTIALS BELOW
-    # example: username = 'sampleuser@email.com'
-    # example: password = 'psswrd1234!'
-    username = ''
-    password = ''
 
-    # CHOOSE YOUR SERVER HERE (see list below)
-    # example for US West:  server = 'dnaw'
-    server = ''
+	global config
 
-    servers = {
-        'EU Random': 'deu',
-        'EU DE-Frankfurt': 'deu.de1',
-        'EU NL-EVO': 'deu.nl2',
-        'EU NL-i3d': 'deu.nl1',
-        'EU UK-London': 'deu.uk',
-        'US Random': 'dna',
-        'US East': 'dnae',
-        'US West': 'dnaw',
-        'US East-NJ': 'dnae1',
-        'US East-VA': 'dnae2',
-        'US East-CAN': 'dnae3',
-        'US East-CAN2': 'dnae4',
-        'Asia': 'dsg'
-    }
+	try:
+		with open('sstv-playlist-config.json') as jsonConfig:
+			config = json.load(jsonConfig)
+	except:
+		print("Invalid config file. Using defaults.")
+		config = {
+			"quality": 1,
+			"checkChannel": True,
+			"includeBadChannels": False,
+			"httpTimeoutChannel": 1,
+			"username": "",
+			"password": "",
+			"server": "",
+			"rtmp": False,
+			"service": "",
+			"minQuality": 0,
+			"guideLookAheadMinutes": 5
+		}
 
-    # If you have not hardcoded your credentials (above),
-    # you will be prompted for them on each run.
-    if not username or not password:
-        colourPrint('bold', greeting)
-        username, password = getCredentials()
+	if not "quality" in config or not isinstance(config["quality"], int):
+		config["quality"] = 1
+	if not "checkChannel" in config:
+		config["checkChannel"] = True
+	if not "includeBadChannels" in config:
+		config["includeBadChannels"] = False
+	if not "httpTimeoutChannel" in config or not (isinstance(config["httpTimeoutChannel"], int) or isinstance(config["httpTimeoutChannel"], float)) or config["httpTimeoutChannel"] < 0 or config["httpTimeoutChannel"] > 15:
+		config["httpTimeoutChannel"] = 1
+	if not "username" in config:
+		config["username"] = ""
+	if not "password" in config:
+		config["password"] = ""
+	if not "server" in config:
+		config["server"] = ""
+	if not "rtmp" in config:
+		config["rtmp"] = False
+	if not "service" in config:
+		config["service"] = ""
+	if not "minQuality" in config or not isinstance(config["minQuality"], int) or config["minQuality"] < 0 or config["minQuality"] > 1080:
+		config["minQuality"] = 0
+	if not "guideLookAheadMinutes" in config or not isinstance(config["guideLookAheadMinutes"], int) or config["guideLookAheadMinutes"] < 0 or config["guideLookAheadMinutes"] > 1440:
+		config["guideLookAheadMinutes"] = 5
 
-    authSign = getAuthSign(username, password)
+	parser = argparse.ArgumentParser(description='SmoothStreamsTV Playlist Generator')
+	parser.add_argument('-f','--find', help='Only return channels matching text (case insensitive)', required=False, default="")
+	parser.add_argument('-q','--minquality', help='Minimum quality (540, 720, 1080)', required=False, type=int, default=config["minQuality"])
+	parser.add_argument('-c','--checkchannel', help='Check channels', required=False, default=config["checkChannel"], action="store_true")
+	parser.add_argument('--nocheckchannel', help='Do not check channels', required=False, default=not config["checkChannel"], action="store_true")
+	parser.add_argument('-b','--includebadchannels', help='Include bad channels', required=False, default=config["includeBadChannels"], action="store_true")
+	parser.add_argument('-m','--minutes', help='Minutes in the future to generate the guide. Channels are not checked for values greater than 29', required=False, type=int, default=config["guideLookAheadMinutes"])
+	parser.add_argument('-s','--server', help='Server to use (deu, dna, dsg)', required=False, default=config["server"])
+	parser.add_argument('--rtmp', help='Use RTMP', required=False, default=config["rtmp"], action="store_true")
+	parser.add_argument('-v','--version', help='Show version information', required=False, default=False, action="store_true")
+	commandLineArgs = vars(parser.parse_args())
 
-    if not server:
-        server = getServer(servers)
+	if commandLineArgs["version"]:
+		print (__appname__ + "\n" + __version__)
+		exit(0)
 
-    colourPrint('yellow',
-                '\nPlease wait, generating playlist.')
+	config["minQuality"] = commandLineArgs["minquality"]
+	config["checkChannel"] = commandLineArgs["checkchannel"] and not commandLineArgs["nocheckchannel"]
+	config["includeBadChannels"] = commandLineArgs["includebadchannels"]
+	config["guideLookAheadMinutes"] = int(commandLineArgs["minutes"])
+	config["server"] = commandLineArgs["server"]
+	config["RTMP"] = commandLineArgs["rtmp"]
 
-    playlistText = generatePlaylist(server, authSign)
-    playlistFile = buildPlaylistFile(playlistText)
+	if (config["guideLookAheadMinutes"] > 29):
+		config["checkChannel"] = False
+
+	servers = {
+		'EU Random': 'deu',
+		'   DE-Frankfurt': 'deu.de1',
+		'   NL-EVO': 'deu.nl2',
+		'   NL-i3d': 'deu.nl1',
+		'   UK-London': 'deu.uk',
+		'US Random': 'dna',
+		'   East': 'dnae',
+		'   West': 'dnaw',
+		'   East-NJ': 'dnae1',
+		'   East-VA': 'dnae2',
+		'   East-CAN': 'dnae3',
+		'   East-CAN2': 'dnae4',
+		'Asia': 'dsg'
+	}
+
+	services = {
+		'Live247': 'view247',
+		'Mystreams/Usport': 'viewms',
+		'StarStreams': 'viewss',
+		'MMA SR+': 'viewmmasr',
+		'StreamTVnow': 'viewstvn'
+	}
+
+	# If you have not hardcoded your credentials (above), you will be prompted for them on each run.
+	if not config["username"] or not config["password"]:
+		print(greeting)
+		config["username"], config["password"] = getCredentials(config["username"], config["password"])
+
+	if not config["server"] or not config["server"] in list(servers.values()):
+		config["server"] = getServer(servers, "dna")
+	if not config["service"] or not config["service"] in list(services.values()):
+		config["service"] = getService(services, "viewstvn")
+
+	authSign = getAuthSign(config["username"], config["password"])
+
+	print(config)
+	print('Generating playlist')
+
+	jsonGuide1 = getJSON("iptv.json", "http://guide.smoothstreams.tv/feed.json", "https://iptvguide.netlify.com/iptv.json")
+	jsonGuide2 = getJSON("tv.json", "https://iptvguide.netlify.com/tv.json", "http://199.175.52.89/feed.json")
+	generatePlaylists(config["server"], config["RTMP"], config["service"], config["quality"], config["minQuality"], config["guideLookAheadMinutes"], commandLineArgs["find"].lower(), authSign, jsonGuide1, jsonGuide2)
+
 # end main()
 
+def getJSON(sFile, sURL, sURL2):
+
+	try:
+		if os.path.isfile(sFile) and time.time() - os.stat(sFile).st_mtime < 7200:
+			retVal = json.loads(open(sFile, 'r').read())
+			return retVal
+	except:
+		pass
+
+	try:
+		sJSON = urllib.request.urlopen(sURL).read().decode("utf-8")
+		retVal = json.loads(sJSON)
+	except:
+		try:
+			sJSON = urllib.request.urlopen(sURL2).read().decode("utf-8")
+			retVal = json.loads(sJSON)
+		except:
+			return json.loads("{}")
+
+	file = open(sFile, "w+")
+	file.write(sJSON)
+	file.close()
+	return retVal
+
+# end getJSON()
 
 def getAuthSign(un, pw):
-    '''request JSON from server and return hash'''
+	'''request JSON from server and return hash'''
 
-    baseUrl = 'http://smoothstreams.tv/schedule/admin/dash_new/hash_api.php?'
+	url = 'http://smoothstreams.tv/schedule/admin/dash_new/hash_api.php?' + urlencode({ "username": un, "password": pw, "site": config["service"] })
 
-    params = {
-        "username": un,
-        "password": pw,
-        "site": "viewstvn"
-    }
+	try:
+		response = urlopen(url).read().decode('utf-8')
+		data = loads(response)
+		if data['hash']:
+			return data['hash']
 
-    url = baseUrl + urlencode(params)
-
-    try:
-        response = urlopen(url).read().decode('utf-8')
-        data = loads(response)
-        if data['hash']:
-            colourPrint('green',
-                        'Thank you, authentication complete.\n')
-            return data['hash']
-
-    except ValueError:
-        colourPrint('red',
-                    'Unable to retrieve data from the server.\n' +
-                    'Please check your internet connection and try again.')
-        exit(1)
-    except KeyError:
-        colourPrint('red',
-                    'There was an error with your credentials.\n' +
-                    'Please double-check your username and password,' +
-                    ' and try again.')
-        exit(1)
+	except ValueError:
+		print('Unable to retrieve data from the server.\nPlease check your internet connection and try again.')
+		exit(1)
+	except KeyError:
+		print('There was an error with your credentials.\nPlease double-check your username and password and try again.')
+		exit(1)
 # end getAuthSign()
 
 
-def getCredentials():
-    '''prompt user for username and password'''
+def getCredentials(oldUser, oldPass):
+	'''prompt user for username and password'''
 
-    colourPrint('bold',
-                ('You may wish to store your credentials and server preferences in this file ' +
-                 'by opening it in a text editor and filling in the username, password, and ' +
-                 'server fields.  If you choose not to do this, you will be prompted for ' +
-                 'this information on each run of this script.'))
+	print('You may wish to store your credentials and server preferences in this file by opening it in a text editor and filling in the username, password, and server fields. If you choose not to do this, you will be prompted for this information on each run of this script.')
 
-    colourPrint('yellow',
-                '\nPlease enter your username for SmoothStreamsTV:')
-    username = raw_input('')
-    colourPrint('green',
-                '\nThank you, ' + username + '.\n')
+	print('\nPlease enter your username for SmoothStreamsTV:')
+	username = input(oldUser)
+	print('\nThank you, ' + username + '.\n')
 
-    colourPrint('yellow',
-                '\nPlease enter your password for SmoothStreamsTV:')
-    password = getpass('')
+	print('\nPlease enter your password for SmoothStreamsTV:')
+	password = getpass(oldPass)
 
-    return username, password
+	return username, password
 # end getCredentials()
 
 
-def getServer(servers):
-    '''prompt user to choose closest server'''
+def getServer(servers, defServer):
+	'''prompt user to choose closest server'''
 
-    validServer = False
+	validServer = False
 
-    colourPrint('yellow',
-                '\nServer options:')
-    colourPrint('yellow',
-                dumps(servers, sort_keys=True, indent=4))
-    print('Example, for US West: enter "dnaw" (without the quotes)\n')
-    colourPrint('yellow',
-                '\nPlease choose your server:')
-    server = raw_input('')
-    for key, value in list(servers.items()):
-        # cheap and dirty alternative to regex
-        if server in value and len(value) == len(server):
-            validServer = True
-            colourPrint('green',
-                        '\nYou have chosen the ' + key + ' server.\n')
-            break
+	print('\nServer options:')
+	print(dumps(servers, sort_keys=True, indent=4))
+	print('Example, for US West enter "dnaw" (without the quotes)\n')
+	print('\nPlease choose your server:')
+	server = input(defServer)
+	if not server:
+		server = defServer
+	if not server in list(servers.values()):
+		print('\n"' + server + '" is not a recognized server. The playlist will be built with "' + defServer + '", but may not work as expected.\n')
+		server = defServer
 
-    if not validServer:
-            colourPrint('red',
-                        ('\n"' + value + '" is not a recognized server.' +
-                         ' The playlist will be built with "' + value + '",' +
-                         ' but may not work as expected.\n'))
-
-    return (server)
+	return (server)
 # end getServer()
 
 
-def buildPlaylistFile(body):
-    '''write playlist to a new local m3u8 file'''
+def getService(services, defService):
+	'''prompt user to choose service'''
 
-    title = 'SmoothStreamsTV.m3u8'
+	validService = False
 
-    # open file to write, or create file if DNE, write <body> to file and save
-    with open(title, 'w+') as f:
-        f.write(body)
-        f.close()
+	print('\nService options:')
+	print(dumps(services, sort_keys=True, indent=4))
+	print('Example, for StreamTVnow enter "viewstvn" (without the quotes)\n')
+	print('\nPlease choose your service:')
+	service = input(defService).lower()
+	if not service:
+		service = defService
+	if not service in list(services.values()):
+		print('\n"' + service + '" is not a recognized service. The playlist will be built with "' + defService + '", but may not work as expected.\n')
+		service = defService
 
-    # check for existence/closure of file
-    if f.closed:
-        colourPrint('yellow',
-                    '\nPlaylist built successfully, located at: ')
-        colourPrint('underline',
-                    path.abspath(title))
-        exit(0)
-    else:
-        raise FileNotFoundError
+	return (service)
+# end getService()
+
+
+def buildPlaylistFile(fileName, body):
+	'''write playlist to a new local m3u8 file'''
+
+	# open file to write, or create file if DNE, write <body> to file and save
+	with open(fileName, 'w+') as f:
+		f.write(body)
+		f.close()
+
+	# check for existence/closure of file
+	if f.closed:
+		print('Playlist built successfully, located at: ' + path.abspath(fileName))
+	else:
+		raise FileNotFoundError
+
 # end buildPlaylistFile()
 
 
-def generatePlaylist(server, authSign):
-    '''build string of channels in m3u8 format based on global channelDictionary'''
+def generatePlaylists(server, rtmp, service, streamQuality, minQuality, guideLookAheadMinutes, find, authSign, jsonGuide1, jsonGuide2):
+	'''build strings of channels in m3u8 and xspf formats'''
 
-    m3u8 = '#EXTM3U\n'
-    # iterate through channels in channel-number order
-    for channel in sorted(channelDictionary, key=lambda channel: int(channel)):
-        m3u8 += ('#EXTINF:-1, ' + channel +
-                 ' ' + channelDictionary[channel] +
-                 '\n' + 'http://' + server +
-                 '.smoothstreams.tv:9100/viewstvn/ch' + channel +
-                 'q1.stream/playlist.m3u8?wmsAuthSign=' + authSign + '\n')
+	if rtmp:
+		urlTemplate = 'rtmp://{0}.smoothstreams.tv:3625/{1}?wmsAuthSign={4}/ch{2}q{3}.stream'
+	else:
+		urlTemplate = 'http://{0}.smoothstreams.tv:9100/{1}/ch{2}q{3}.stream/playlist.m3u8?wmsAuthSign={4}=='
+	m3u8TrackTemplate = '#EXTINF:-1,{0} - {1} #{2}\n{3}\n'
+	xspfBodyTemplate = ('<?xml version="1.0" encoding="UTF-8"?>\n' +
+		 '<playlist xmlns="http://xspf.org/ns/0/" xmlns:vlc="http://www.videolan.org/vlc/playlist/ns/0/" version="1">\n' +
+		'\t<title>Playlist</title>\n' +
+		'\t<trackList>\n' +
+		'{0}' +
+		'\t</trackList>\n' +
+		'\t<extension application="http://www.videolan.org/vlc/playlist/0">\n' +
+		'{1}' +
+		'\t</extension>\n' +
+		'</playlist>')
+	xspfTrackTemplate = ('\t\t<track>\n' +
+		'\t\t\t<location>{5}</location>\n' +
+		'\t\t\t<title>{3}</title>\n' +
+		'\t\t\t<creator>Ch{4} {8}</creator>\n' +
+		'\t\t\t<album>{0}</album>\n' +
+		'\t\t\t<trackNum>{6}</trackNum>\n' +
+		'\t\t\t<annotation>{9}</annotation>\n' +
+		'\t\t\t<extension application="http://www.videolan.org/vlc/playlist/0">\n' +
+		'\t\t\t\t<vlc:id>{7}</vlc:id>\n' +
+		'\t\t\t</extension>\n' +
+		'\t\t</track>\n')
+	xspfTrack2Template = '\t\t<vlc:item tid="{0}"/>\n'
+	m3u8 = '#EXTM3U\n'
+	xspfTracks = ""
+	xspfTracks2 = ""
+	trackCounter = 0
+	foundChannels = 0
 
-    return m3u8
-# end generatePlaylist()
+	maxChannel = 0
+	for item, x in iter(jsonGuide1.items()):
+		if int(item) > maxChannel:
+			maxChannel = int(item)
+	for item, x in iter(jsonGuide2.items()):
+		if int(item) > maxChannel:
+			maxChannel = int(item)
 
+	# iterate through channels in channel-number order
+	for channel in range(1, maxChannel):
+		program = getProgram(jsonGuide1, jsonGuide2, channel, time.localtime(time.time() + guideLookAheadMinutes * 60))
+		url = urlTemplate.format(server, service, format(channel, "02"), str(streamQuality), authSign)
+		print('\r' + str(channel) + "/" + str(maxChannel), end='')
+		if (len(find) == 0 or re.search(find, program.title.lower()) != None):
+			chanResp = checkChannelURL(channel, url)
+			if (config["includeBadChannels"] or chanResp.find("#EXT-X-VERSION:") > 0):
+				if chanResp.find("RESOLUTION=") > -1:
+					program.quality = chanResp.split("RESOLUTION=")[1].split(",")[0].split("\n")[0]
+				if not minQuality or program.height == 0 or minQuality < 360 or minQuality <= program.height:
+					m3u8 += m3u8TrackTemplate.format(program.album, program.title, str(program.channel), url)
+					xspfTracks += xspfTrackTemplate.format(escape(program.album), escape(program.quality), escape(program.language), escape(program.title), str(program.channel), url, str(trackCounter + 1), str(trackCounter), escape(program.channelname), escape(program.description))
+					xspfTracks2 += xspfTrack2Template.format(str(trackCounter))
+					foundChannels += 1
+		trackCounter = trackCounter + 1
+	print()
 
-class colour:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
+	if (foundChannels == 0):
+		print("No channels found")
+	else:
+		print(str(foundChannels) + " channels found")
+		xspf = xspfBodyTemplate.format(xspfTracks, xspfTracks2)
+		buildPlaylistFile("SmoothStreamsTV.xspf", xspf)
+		buildPlaylistFile("SmoothStreamsTV.m3u8", m3u8)
+# generatePlaylists()
 
+def getProgram(jsonGuide1, jsonGuide2, channel, tmNow):
 
-def colourPrint(spec, text):
-    '''print text with specified formatting effect'''
+	retVal = programinfo()
+	try:
+		oChannel = jsonGuide1[str(int(channel))]
+		retVal.channel = channel
+		retVal.channelname = oChannel["name"].replace(format(channel, "02") + " - ", "").strip()
+		for item in oChannel["items"]:
+			startTime = time.strptime(item["time"], '%Y-%m-%d %H:%M:%S')
+			endTime = time.strptime(item["end_time"], '%Y-%m-%d %H:%M:%S')
+			if startTime < tmNow and endTime > tmNow:
+				retVal.category = item["category"].strip()
+				retVal.quality = item["quality"].upper()
+				retVal.language = item["language"].upper()
+				retVal.title = item["name"].strip()
+				retVal.description = item["description"].strip()
+				retVal.channel = channel
+				retVal.endtime = time.strftime("%H:%M", startTime) + "-" + time.strftime("%H:%M", endTime)
+				return retVal
 
-    text = str(text)
-    if spec.upper() == 'BOLD':
-        print(colour.BOLD + text + colour.END)
-    elif spec.upper() == 'GREEN':
-        print(colour.GREEN + text + colour.END)
-    elif spec.upper() == 'YELLOW':
-        print(colour.YELLOW + text + colour.END)
-    elif spec.upper() == 'RED':
-        print(colour.RED + text + colour.END)
-    elif spec.upper() == 'PURPLE':
-        print(colour.PURPLE + text + colour.END)
-    elif spec.upper() == 'CYAN':
-        print(colour.CYAN + text + colour.END)
-    elif spec.upper() == 'DARKCYAN':
-        print(colour.DARKCYAN + text + colour.END)
-    elif spec.upper() == 'BLUE':
-        print(colour.BLUE + text + colour.END)
-    elif spec.upper() == 'UNDERLINE':
-        print(colour.UNDERLINE + text + colour.END)
-# end colourPrint()
+		oChannel = jsonGuide2[str(int(channel))]
+		for item in oChannel["items"]:
+			startTime = time.strptime(item["time"], '%Y-%m-%d %H:%M:%S')
+			endTime = time.strptime(item["end_time"], '%Y-%m-%d %H:%M:%S')
+			if startTime < tmNow and endTime > tmNow:
+				retVal.category = item["category"].strip()
+				retVal.quality = item["quality"].upper()
+				retVal.language = item["language"].upper()
+				retVal.title = item["name"].strip()
+				retVal.description = item["description"].strip()
+				retVal.channel = channel
+				retVal.endtime = time.strftime("%H:%M", startTime) + "-" + time.strftime("%H:%M", endTime)
+				return retVal
+	except:
+		return retVal
 
+	return retVal
+# end getProgram
 
-channelDictionary = {
-    '01': 'ESPNews',
-    '02': 'ESPN',
-    '03': 'ESPN 2',
-    '04': 'ESPN U',
-    '05': 'Fox Sports 1',
-    '06': 'Fox Sports 2',
-    '07': 'NFL Network',
-    '08': 'NBA TV',
-    '09': 'MLB Network',
-    '10': 'NHL Network',
-    '11': 'NBC Sports Network',
-    '12': 'Golf Channel',
-    '13': 'Tennis Channel',
-    '14': 'CBS Sports Network',
-    '15': 'Fight Network',
-    '16': 'WWE Network',
-    '17': 'Sportsnet World',
-    '18': 'Sportsnet 360',
-    '19': 'Sportsnet Ontario',
-    '20': 'Sportsnet One',
-    '21': 'TSN 1',
-    '22': 'beIN US',
-    '23': 'Univision Deportes',
-    '24': 'ESPN Deportes',
-    '25': 'USA Network',
-    '26': 'Viceland',
-    '27': 'Destination America',
-    '28': 'TBS',
-    '29': 'TNT',
-    '30': 'SyFy',
-    '31': 'Spike',
-    '32': 'Cartoon Network East',
-    '33': 'A&E',
-    '34': 'NBC East (Buffalo)',
-    '35': 'CBS East (Buffalo)',
-    '36': 'ABC East (Buffalo)',
-    '37': 'Fox East (Buffalo)',
-    '38': 'CNN',
-    '39': 'CNBC',
-    '40': 'Fox News 360',
-    '41': 'History Channel',
-    '42': 'Discovery Channel',
-    '43': 'National Geographic',
-    '44': 'FX',
-    '45': 'FXX',
-    '46': 'Comedy Central',
-    '47': 'AMC',
-    '48': 'HBO East',
-    '49': 'HBO Comedy',
-    '50': 'HBO Signature',
-    '51': 'HBO Zone',
-    '52': 'ShowTime East',
-    '53': 'ActionMax HD East',
-    '54': 'Cinemax Moremax',
-    '55': 'Starz Cinema',
-    '56': 'Starz East',
-    '57': '',
-    '58': '',
-    '59': 'Cinemax East',
-    '60': 'Cinemax 5 Star',
-    '61': '',
-    '62': '',
-    '63': '',
-    '64': '',
-    '65': '',
-    '66': '',
-    '67': '',
-    '68': '',
-    '69': '',
-    '70': '',
-    '71': '',
-    '72': '',
-    '73': '',
-    '74': '',
-    '75': '',
-    '76': '',
-    '77': '',
-    '78': '',
-    '79': '',
-    '80': '',
-    '81': '',
-    '82': '',
-    '83': '',
-    '84': '',
-    '85': '',
-    '86': '',
-    '87': '',
-    '88': '',
-    '89': '',
-    '90': '',
-    '91': '',
-    '92': '',
-    '93': '',
-    '94': '',
-    '95': '',
-    '96': '',
-    '97': '',
-    '98': '',
-    '99': '',
-    '100': '',
-    '101': '',
-    '102': '',
-    '103': '',
-    '104': '',
-    '105': '',
-    '106': '',
-    '107': '',
-    '108': '',
-    '109': '',
-    '110': '',
-    '111': '',
-    '112': 'Sky Sports News HQ',
-    '113': 'Sky Sports 1 UK',
-    '114': 'Sky Sports 2 UK',
-    '115': 'Sky Sports 3 UK',
-    '116': 'Sky Sports 4 UK',
-    '117': 'Sky Sports 5 UK',
-    '118': 'Sky Sports F1 UK',
-    '119': 'MMA 1 Slot (FightPass etc)',
-    '120': 'MMA 2 Slot (Overflow if necessary)'
-}
-
+def checkChannelURL(channel, sURL):
+	if not config["checkChannel"]:
+		return "#EXTM3U\n#EXT-X-VERSION:3"
+	
+	try:
+		return urlopen(sURL, timeout = config["httpTimeoutChannel"]).read().decode('utf-8')
+	except:
+		return ""
+# checkChannelURL()
 
 if __name__ == '__main__':
-    main()
+	main()
