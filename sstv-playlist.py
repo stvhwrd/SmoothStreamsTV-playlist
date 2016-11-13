@@ -116,10 +116,11 @@ def getCredentials():
     '''prompt user for username and password'''
 
     colourPrint('bold',
-                ('You may wish to store your credentials and server preferences in this file ' +
-                 'by opening it in a text editor and filling in the username, password, and ' +
-                 'server fields.  If you choose not to do this, you will be prompted for ' +
-                 'this information on each run of this script.'))
+                ('You may wish to store your credentials and server ' +
+                 'preferences in this file by opening it in a text editor ' +
+                 'and filling in the username, password, and server ' +
+                 'fields.\nIf you choose not to do this, you will be ' +
+                 'prompted for this information on each run of this script.'))
 
     colourPrint('yellow',
                 '\nPlease enter your username for SmoothStreamsTV:')
@@ -189,7 +190,8 @@ def buildPlaylistFile(body):
 
 
 def generatePlaylist(server, authSign):
-    '''build string of channels in m3u8 format based on global channelDictionary'''
+    '''build string of channels in m3u8 format based on
+    global channelDictionary'''
 
     m3u8 = '#EXTM3U\n'
     # iterate through channels in channel-number order
