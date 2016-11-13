@@ -6,8 +6,7 @@
 from getpass import getpass
 from json import loads, dumps
 from os import path
-from urllib.request import urlopen
-from urllib.parse import urlencode
+from urllib import urlopen, urlencode
 import time
 
 __appname__ = 'SSTV-playlist'
@@ -123,7 +122,7 @@ def getCredentials():
 
     colourPrint('yellow',
                 '\nPlease enter your username for SmoothStreamsTV:')
-    username = input('')
+    username = raw_input('')
     colourPrint('green',
                 '\nThank you, ' + username + '.\n')
 
@@ -147,7 +146,7 @@ def getServer(servers):
     print('Example, for US West: enter "dnaw" (without the quotes)\n')
     colourPrint('yellow',
                 '\nPlease choose your server:')
-    server = input('')
+    server = raw_input('')
     for key, value in list(servers.items()):
         # cheap and dirty alternative to regex
         if server in value and len(value) == len(server):
@@ -222,23 +221,23 @@ def colourPrint(spec, text):
 
     text = str(text)
     if spec.upper() == 'BOLD':
-        print((colour.BOLD + text + colour.END))
+        print(colour.BOLD + text + colour.END)
     elif spec.upper() == 'GREEN':
-        print((colour.GREEN + text + colour.END))
+        print(colour.GREEN + text + colour.END)
     elif spec.upper() == 'YELLOW':
-        print((colour.YELLOW + text + colour.END))
+        print(colour.YELLOW + text + colour.END)
     elif spec.upper() == 'RED':
-        print((colour.RED + text + colour.END))
+        print(colour.RED + text + colour.END)
     elif spec.upper() == 'PURPLE':
-        print((colour.PURPLE + text + colour.END))
+        print(colour.PURPLE + text + colour.END)
     elif spec.upper() == 'CYAN':
-        print((colour.CYAN + text + colour.END))
+        print(colour.CYAN + text + colour.END)
     elif spec.upper() == 'DARKCYAN':
-        print((colour.DARKCYAN + text + colour.END))
+        print(colour.DARKCYAN + text + colour.END)
     elif spec.upper() == 'BLUE':
-        print((colour.BLUE + text + colour.END))
+        print(colour.BLUE + text + colour.END)
     elif spec.upper() == 'UNDERLINE':
-        print((colour.UNDERLINE + text + colour.END))
+        print(colour.UNDERLINE + text + colour.END)
 # end colourPrint()
 
 
