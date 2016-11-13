@@ -4,7 +4,7 @@ Generate a M3U8 playlist (for VLC, MPC, MPlayer, etc.) for [SmoothStreamsTV](htt
 
 ## Requirements
 
-* [Python 2.7.10<sup>+<sup>](https://www.python.org/download/releases/2.7/)
+* [Python 3.5.2<sup>+<sup>](https://www.python.org/download/releases/3.5.2/)
 
 I've made an effort to use only built-in Python modules, but please let me know if your system requires any extra items installed to make this work.
 
@@ -17,7 +17,7 @@ I've made an effort to use only built-in Python modules, but please let me know 
 
 3. Open the folder.
 
-4. Run the script with **Python 2**:  `python ./sstv-playlist.py`
+4. Run the script with **Python 3**:  `python3 ./sstv-playlist.py`
 
 
 ## Result
@@ -31,7 +31,7 @@ $ cd ~
 
 and call the script in your `~/Scripts` directory,
 ```bash
-$ python ~/Scripts/sstv-playlist.py
+$ python3 ~/Scripts/sstv-playlist.py
 ```
 
 the script will be created in your home directory.
