@@ -80,7 +80,7 @@ def main():
 def getAuthSign(un, pw):
     '''request JSON from server and return hash'''
 
-    baseUrl = 'http://smoothstreams.tv/schedule/admin/dash_new/hash_api.php?'
+    baseUrl = 'http://auth.smoothstreams.tv/hash_api.php?'
 
     params = {
         "username": un,
