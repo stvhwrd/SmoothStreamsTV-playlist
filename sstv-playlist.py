@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 '''generate an m3u8 playlist with your SmoothStreamsTV credentials'''
