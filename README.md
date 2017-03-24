@@ -4,7 +4,7 @@ Generate a M3U8 playlist (for VLC, MPC, MPlayer, etc.) for [SmoothStreamsTV](htt
 
 ## Requirements
 
-* [Python 3.5.2<sup>+<sup>](https://www.python.org/download/releases/3.5.2/)
+* <a href=https://www.python.org/download/releases/3.5.2/>Python 3.5.2<sup>+<sup></a>
 
 I've made an effort to use only built-in Python modules, but please let me know if your system requires any extra items installed to make this work.
 
@@ -40,6 +40,8 @@ $ ls ~
 
   SmoothStreamsTV.m3u8
 ```
+
+### Note: the SmoothStreams server provides an access token that is valid for only 240 minutes (4 hours) so this script will need to be run every 4 hours if used in some kind of server configuration.
 
 
 ## Testing
