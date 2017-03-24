@@ -1,6 +1,6 @@
 ## Requirements
 
-* <a href=https://www.python.org/download/releases/3.5.2/>Python 3.5.2<sup>+<sup></a>
+<a href=https://www.python.org/download/releases/3.5.2/>Python 3.5.2<sup>+<sup></a>
 
 I've made an effort to use only built-in Python modules, but please let me know if your system requires any extra items installed to make this work.
 
