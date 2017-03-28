@@ -169,14 +169,13 @@ def getServer(servers):
             break
 
     if not validServer:
-            colourPrint('red',
-                        ('\n"' + value + '" is not a recognized server.' +
-                         ' The playlist will be built with "' + value + '",' +
-                         ' but may not work as expected.\n'))
+        colourPrint('red',
+                    ('\n"' + value + '" is not a recognized server.' +
+                     ' The playlist will be built with "' + value + '",' +
+                     ' but may not work as expected.\n'))
 
     return (server)
 # end getServer()
-
 
 
 def getHost(hosts):
@@ -201,10 +200,10 @@ def getHost(hosts):
             break
 
     if not validHost:
-            colourPrint('red',
-                        ('\n"' + value + '" is not a recognized host.' +
-                         ' Authentication will be attempted on "' + value +
-                         '", but might not succeed.\n'))
+        colourPrint('red',
+                    ('\n"' + value + '" is not a recognized host.' +
+                     ' Authentication will be attempted on "' + value +
+                     '", but might not succeed.\n'))
 
     return (host)
 # end getServer()
@@ -350,7 +349,7 @@ channelDictionary = {
     '60': 'Cinemax 5 Star',
     '61': '',
     '62': '',
-    '63': 'Foot Network',
+    '63': 'Food Network',
     '64': 'E!',
     '65': '',
     '66': '',
