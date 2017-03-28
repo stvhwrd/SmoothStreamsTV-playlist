@@ -13,12 +13,8 @@ import time
 __appname__ = 'SSTV-playlist'
 __author__ = 'Stevie Howard (stvhwrd)'
 __copyright__ = 'Copyright 2016, Stevie Howard'
-__credits__ = ['Stevie Howard']
 __license__ = 'MIT'
 __version__ = 'v0.2-beta'
-__maintainer__ = 'Stevie Howard'
-__email__ = 'stvhwrd@uvic.ca'
-__status__ = 'Beta'
 
 
 greeting = '''
@@ -32,6 +28,8 @@ and current as of March 15, 2017.
 
 
 def main():
+
+    colourPrint('bold', greeting)
     # ENTER YOUR CREDENTIALS BELOW
     # example: username = 'sampleuser@email.com'
     # example: password = 'psswrd1234!'
@@ -43,41 +41,54 @@ def main():
     server = ''
 
     servers = {
-        'EU Random': 'deu',
+        'EU Random':       'deu',
         'EU DE-Frankfurt': 'deu.de1',
-        'EU NL-EVO': 'deu.nl2',
-        'EU NL-i3d': 'deu.nl1',
-        'EU UK-London': 'deu.uk',
-        'US Random': 'dna',
-        'US East': 'dnae',
-        'US West': 'dnaw',
-        'US East-NJ': 'dnae1',
-        'US East-VA': 'dnae2',
-        'US East-CAN': 'dnae3',
-        'US East-CAN2': 'dnae4',
-        'Asia': 'dsg'
+        'EU NL-EVO':       'deu.nl2',
+        'EU NL-i3d':       'deu.nl1',
+        'EU UK-London':    'deu.uk',
+        'US Random':       'dna',
+        'US East':         'dnae',
+        'US West':         'dnaw',
+        'US East-NJ':      'dnae1',
+        'US East-VA':      'dnae2',
+        'US East-CAN':     'dnae3',
+        'US East-CAN2':    'dnae4',
+        'Asia':            'dsg'
     }
 
-    # If you have not hardcoded your credentials (above),
-    # you will be prompted for them on each run.
-    if not username or not password:
-        colourPrint('bold', greeting)
-        username, password = getCredentials()
+    # CHOOSE YOUR HOST HERE (see list below)
+    # example for StreamTVNow:  host = 'viewstvn'
+    host = ''
 
-    authSign = getAuthSign(username, password)
+    hosts = {
+        'Live247':     'view247',
+        'MyStreams':   'viewms',
+        'StarStreams': 'viewss',
+        'StreamTVNow': 'viewstvn'
+    }
+
+    # If you have not hardcoded your credentials and server/host preferences
+    # above, you will be prompted for them on each run of the script.
+    if not host:
+        host = getHost(hosts)
 
     if not server:
         server = getServer(servers)
 
+    if not username or not password:
+        username, password = getCredentials()
+
     colourPrint('yellow',
                 '\nPlease wait, generating playlist.')
+
+    authSign = getAuthSign(username, password, host)
 
     playlistText = generatePlaylist(server, authSign)
     playlistFile = buildPlaylistFile(playlistText)
 # end main()
 
 
-def getAuthSign(un, pw):
+def getAuthSign(un, pw, host):
     '''request JSON from server and return hash'''
 
     baseUrl = 'http://auth.smoothstreams.tv/hash_api.php?'
@@ -85,7 +96,7 @@ def getAuthSign(un, pw):
     params = {
         "username": un,
         "password": pw,
-        "site": "viewstvn"
+        "site": host
     }
 
     url = baseUrl + urlencode(params)
@@ -164,6 +175,38 @@ def getServer(servers):
                          ' but may not work as expected.\n'))
 
     return (server)
+# end getServer()
+
+
+
+def getHost(hosts):
+    '''prompt user to choose closest server'''
+
+    validHost = False
+
+    colourPrint('yellow',
+                '\nHost options:')
+    colourPrint('yellow',
+                dumps(hosts, sort_keys=True, indent=4))
+    print('Example, for StreamTVNow: enter "viewstvn" (without the quotes)\n')
+    colourPrint('yellow',
+                '\nPlease choose your host:')
+    host = input('')
+    for key, value in list(hosts.items()):
+        # cheap and dirty alternative to regex
+        if host in value and len(value) == len(host):
+            validHost = True
+            colourPrint('green',
+                        '\nYou have chosen the ' + key + ' host.\n')
+            break
+
+    if not validHost:
+            colourPrint('red',
+                        ('\n"' + value + '" is not a recognized host.' +
+                         ' Authentication will be attempted on "' + value +
+                         '", but might not succeed.\n'))
+
+    return (host)
 # end getServer()
 
 
