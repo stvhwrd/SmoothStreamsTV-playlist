@@ -1,0 +1,13 @@
+{
+	"quality": 1,
+	"checkChannel": True,
+	"includeBadChannels": False,
+	"httpTimeoutChannel": 1,
+	"rtmp": False,
+	"minQuality": 0,
+	"guideLookAheadMinutes": 5,
+	"username": "",
+	"password": "",
+	"server": "",
+	"service": ""
+}
