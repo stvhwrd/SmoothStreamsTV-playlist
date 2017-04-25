@@ -83,7 +83,7 @@ def main():
 
     authSign = getAuthSign(username, password, host)
 
-    playlistText = generatePlaylist(server, authSign)
+    playlistText = generatePlaylist(server, host, authSign)
     playlistFile = buildPlaylistFile(playlistText)
 # end main()
 
@@ -231,7 +231,7 @@ def buildPlaylistFile(body):
 # end buildPlaylistFile()
 
 
-def generatePlaylist(server, authSign):
+def generatePlaylist(server, host, authSign):
     '''build string of channels in m3u8 format based on
     global channelDictionary'''
 
@@ -241,7 +241,7 @@ def generatePlaylist(server, authSign):
         m3u8 += ('#EXTINF:-1, ' + channel +
                  ' ' + channelDictionary[channel] +
                  '\n' + 'http://' + server +
-                 '.smoothstreams.tv:9100/viewstvn/ch' + channel +
+                 '.smoothstreams.tv:9100/' + host + '/ch' + channel +
                  'q1.stream/playlist.m3u8?wmsAuthSign=' + authSign + '\n')
 
     return m3u8
