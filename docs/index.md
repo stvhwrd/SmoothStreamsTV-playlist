@@ -4,7 +4,7 @@ Generate a M3U8 playlist (for VLC, MPC, MPlayer, etc.) for [SmoothStreamsTV](htt
 
 ## Requirements
 
-*   <a href=https://www.python.org/download/releases/3.5.2/>Python 3.5.2<sup>+<sup></a>
+*   [Python 3.5.2](https://www.python.org/download/releases/3.5.2)<sup>+<sup></a>
 
 I've made an effort to use only built-in Python modules, but please let me know if your system requires any extra items installed to make this work.
 
