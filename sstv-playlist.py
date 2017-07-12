@@ -41,19 +41,24 @@ def main():
     server = ''
 
     servers = {
-        'EU Random':       'deu',
-        'EU DE-Frankfurt': 'deu.de1',
-        'EU NL-EVO':       'deu.nl2',
-        'EU NL-i3d':       'deu.nl1',
-        'EU UK-London':    'deu.uk',
-        'US Random':       'dna',
-        'US East':         'dnae',
-        'US West':         'dnaw',
-        'US East-NJ':      'dnae1',
-        'US East-VA':      'dnae2',
-        'US East-CAN':     'dnae3',
-        'US East-CAN2':    'dnae4',
-        'Asia':            'dsg'
+        'Asia Random':                      'dap',
+        'Europe NL1 (Amsterdam)':           'deu-nl1',
+        'Europe NL2 (Amsterdam)':           'deu-nl2',
+        'Europe NL3 (Amsterdam)':           'deu-nl3',
+        'Europe NL Random':                 'deu-nl',
+        'Europe UK1 (io)':                  'deu-uk1',
+        'Europe UK2 (100TB)':               'deu-uk2',
+        'Europe UK Random':                 'deu-uk',
+        'Europe Random':                    'deu',
+        'USA/Canada East 1 (New Jersey)':   'dnae1',
+        'USA/Canada East 2 (Virginia)':     'dnae2',
+        'USA/Canada East 3 (Montreal)':     'dnae3',
+        'USA/Canada East 4 (Toronto)':      'dnae4',
+        'USA/Canada East Random':           'dnae',
+        'USA/Canada West 1 (Phoenix, AZ)':  'dnaw1',
+        'USA/Canada West 2 (San Jose, CA)': 'dnaw2',
+        'USA/Canada West Random':           'dnaw',
+        'USA/Canada Random':                'dna'
     }
 
     # CHOOSE YOUR HOST HERE (see list below)
@@ -156,7 +161,7 @@ def getServer(servers):
                 '\nServer options:')
     colourPrint('yellow',
                 dumps(servers, sort_keys=True, indent=4))
-    print('Example, for US West: enter "dnaw" (without the quotes)\n')
+    print('Example, for USA/Canada West 1 (Phoenix, AZ): enter "dnaw1" (without the quotes)\n')
     colourPrint('yellow',
                 '\nPlease choose your server:')
     server = input('')
@@ -170,8 +175,8 @@ def getServer(servers):
 
     if not validServer:
         colourPrint('red',
-                    ('\n"' + value + '" is not a recognized server.' +
-                     ' The playlist will be built with "' + value + '",' +
+                    ('\n"' + server + '" is not a recognized server.' +
+                     ' The playlist will be built with "' + server + '",' +
                      ' but may not work as expected.\n'))
 
     return (server)
