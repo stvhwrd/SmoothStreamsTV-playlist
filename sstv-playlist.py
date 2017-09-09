@@ -5,7 +5,7 @@
 
 from getpass import getpass
 from json import loads, dumps
-from os import path
+from os import path, environ
 from urllib.request import urlopen
 from urllib.parse import urlencode
 import time
