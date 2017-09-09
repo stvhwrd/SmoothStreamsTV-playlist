@@ -65,18 +65,20 @@ def main():
                 print("SSTV_HOST set.")
         except KeyError:
             print('SSTV_HOST environment variable not found')
+    else:
+        # example: username = 'sampleuser@email.com'
+        username = ''
+
+        # example: password = 'psswrd1234!'
+        password = ''
+
+        # example for US West:  server = 'dnaw'
+        server = ''
+
+        # example for StreamTVNow:  host = 'viewstvn'
+        host = ''
 
     colourPrint('bold', greeting)
-    # ENTER YOUR CREDENTIALS BELOW
-    # example: username = 'sampleuser@email.com'
-    # example: password = 'psswrd1234!'
-
-    username = ''
-    password = ''
-
-    # CHOOSE YOUR SERVER HERE (see list below)
-    # example for US West:  server = 'dnaw'
-    server = ''
 
     servers = {
         'Asia Random':                              'dap',
@@ -104,10 +106,6 @@ def main():
         'North America West Random':                'dnaw',
         'North America Random':                     'dna'
     }
-
-    # CHOOSE YOUR HOST HERE (see list below)
-    # example for StreamTVNow:  host = 'viewstvn'
-    host = ''
 
     hosts = {
         'Live247':     'view247',
