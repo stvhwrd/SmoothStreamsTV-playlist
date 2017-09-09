@@ -33,8 +33,10 @@ def main():
     # ENTER YOUR CREDENTIALS BELOW
     # example: username = 'sampleuser@email.com'
     # example: password = 'psswrd1234!'
-    username = ''
-    password = ''
+
+    # Check environment variables for stored credentials
+    username = environ['SSTV-USERNAME']
+    password = environ['SSTV-PASSWORD']
 
     # CHOOSE YOUR SERVER HERE (see list below)
     # example for US West:  server = 'dnaw'
