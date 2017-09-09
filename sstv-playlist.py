@@ -28,17 +28,16 @@ and current as of September 9, 2017.
 '''
 
 
-# example: username = 'sampleuser@email.com'
-username = ''
-# example: password = 'psswrd1234!'
-password = ''
-# example for US West:  server = 'dnaw'
-server = ''
-# example for StreamTVNow:  host = 'viewstvn'
-host = ''
-
-
 def main():
+
+    # example: username = 'sampleuser@email.com'
+    username = ''
+    # example: password = 'psswrd1234!'
+    password = ''
+    # example for US West:  server = 'dnaw'
+    server = ''
+    # example for StreamTVNow:  host = 'viewstvn'
+    host = ''
 
     # Parse any arguments provided at runtime
     parser = argparse.ArgumentParser()
