@@ -35,8 +35,8 @@ def main():
     # example: password = 'psswrd1234!'
 
     # Check environment variables for stored credentials
-    username = environ['SSTV-USERNAME']
-    password = environ['SSTV-PASSWORD']
+    username = environ['SSTV_USERNAME']
+    password = environ['SSTV_PASSWORD']
 
     # CHOOSE YOUR SERVER HERE (see list below)
     # example for US West:  server = 'dnaw'
