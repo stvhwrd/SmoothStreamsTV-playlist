@@ -22,7 +22,7 @@ WELCOME to the SmoothStreamsTV playlist generator!
 
 This program will generate an .m3u8 playlist file with all available channels
 for the SmoothStreamsTV IPTV provider, playable in media players and browsers.
-Please note: channel names/numbers are sourced from SmoothStreamsTV,
+Please note: server and channel names/numbers are sourced from SmoothStreamsTV,
 and current as of September 9, 2017.
 '''
 
@@ -41,24 +41,30 @@ def main():
     server = ''
 
     servers = {
-        'Asia Random':                      'dap',
-        'Europe NL1 (Amsterdam)':           'deu-nl1',
-        'Europe NL2 (Amsterdam)':           'deu-nl2',
-        'Europe NL3 (Amsterdam)':           'deu-nl3',
-        'Europe NL Random':                 'deu-nl',
-        'Europe UK1 (io)':                  'deu-uk1',
-        'Europe UK2 (100TB)':               'deu-uk2',
-        'Europe UK Random':                 'deu-uk',
-        'Europe Random':                    'deu',
-        'USA/Canada East 1 (New Jersey)':   'dnae1',
-        'USA/Canada East 2 (Virginia)':     'dnae2',
-        'USA/Canada East 3 (Montreal)':     'dnae3',
-        'USA/Canada East 4 (Toronto)':      'dnae4',
-        'USA/Canada East Random':           'dnae',
-        'USA/Canada West 1 (Phoenix, AZ)':  'dnaw1',
-        'USA/Canada West 2 (San Jose, CA)': 'dnaw2',
-        'USA/Canada West Random':           'dnaw',
-        'USA/Canada Random':                'dna'
+        'Asia Random':                              'dap',
+        'Europe Germany Random':                    'deu-de',
+        'Europe Netherlands 1 (i3d)':               'deu-nl1',
+        'Europe Netherlands 2 (i3d)':               'deu-nl2',
+        'Europe Netherlands 3 (Amsterdam)':         'deu-nl3',
+        'Europe Netherlands 4 (Breda)':             'deu-nl4',
+        'Europe Netherlands 5 (Enschede)':          'deu-nl5',
+        'Europe Netherlands Random':                'deu-nl',
+        'Europe United Kingdom 1 (io)':             'deu-uk1',
+        'Europe United Kingdom 2 (100TB)':          'deu-uk2',
+        'Europe United Kingdom Random':             'deu-uk',
+        'Europe Random':                            'deu',
+        'North America East 1 (New Jersey)':        'dnae1',
+        'North America East 2 (Virginia)':          'dnae2',
+        'North America East 3 (Montreal)':          'dnae3',
+        'North America East 4 (Toronto)':           'dnae4',
+        'North America East 6 (New York)':          'dnae6',
+        'North America East Random':                'dnae',
+        'North America West 1 (Phoenix, AZ)':       'dnaw1',
+        'North America West 2 (Los Angeles, CA)':   'dnaw2',
+        'North America West 1 (San Jose, CA)':      'dnaw3',
+        'North America West 2 (Chicago, IL)':       'dnaw4',
+        'North America West Random':                'dnaw',
+        'North America Random':                     'dna'
     }
 
     # CHOOSE YOUR HOST HERE (see list below)
@@ -161,7 +167,7 @@ def getServer(servers):
                 '\nServer options:')
     colourPrint('yellow',
                 dumps(servers, sort_keys=True, indent=4))
-    print('Example, for USA/Canada West 1 (Phoenix, AZ): enter "dnaw1" (without the quotes)\n')
+    print('Example - for North America West 1 (Phoenix, AZ): enter "dnaw1" (without the quotes)\n')
     colourPrint('yellow',
                 '\nPlease choose your server:')
     server = input('')
