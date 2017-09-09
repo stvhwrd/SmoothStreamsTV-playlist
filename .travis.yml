@@ -1,0 +1,13 @@
+# https://travis-ci.org/stvhwrd/SmoothStreamsTV-playlist
+
+# Use containers instead of full VMs for faster startup.
+sudo: false
+
+language: python
+python:
+  - 3.6
+  - nightly
+
+# command to run tests
+script:
+  - pytest
