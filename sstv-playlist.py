@@ -40,7 +40,7 @@ def main():
 
     # CHOOSE YOUR SERVER HERE (see list below)
     # example for US West:  server = 'dnaw'
-    server = ''
+    server = environ['SSTV_SERVER']
 
     servers = {
         'Asia Random':                              'dap',
@@ -71,7 +71,7 @@ def main():
 
     # CHOOSE YOUR HOST HERE (see list below)
     # example for StreamTVNow:  host = 'viewstvn'
-    host = ''
+    host = environ['SSTV_HOST']
 
     hosts = {
         'Live247':     'view247',
