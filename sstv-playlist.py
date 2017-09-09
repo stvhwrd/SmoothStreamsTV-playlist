@@ -23,7 +23,7 @@ WELCOME to the SmoothStreamsTV playlist generator!
 This program will generate an .m3u8 playlist file with all available channels
 for the SmoothStreamsTV IPTV provider, playable in media players and browsers.
 Please note: channel names/numbers are sourced from SmoothStreamsTV,
-and current as of March 15, 2017.
+and current as of September 9, 2017.
 '''
 
 
