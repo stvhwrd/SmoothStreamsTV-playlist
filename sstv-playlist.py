@@ -28,6 +28,16 @@ and current as of September 9, 2017.
 '''
 
 
+# example: username = 'sampleuser@email.com'
+username = ''
+# example: password = 'psswrd1234!'
+password = ''
+# example for US West:  server = 'dnaw'
+server = ''
+# example for StreamTVNow:  host = 'viewstvn'
+host = ''
+
+
 def main():
 
     # Parse any arguments provided at runtime
@@ -35,7 +45,8 @@ def main():
     parser.add_argument('-e', '--env', help='run the script using environment variables exclusively.', action='store_true')
     args = parser.parse_args()
 
-    # This is specifically for integration testing with Travis CI
+    # This is specifically for integration testing with Travis CI,
+    # but could be used by anyone who cares to set environment variables.
     if args.env:
         print("\nLooking for environment variables...")
         try:
@@ -65,18 +76,7 @@ def main():
                 print("SSTV_HOST set.")
         except KeyError:
             print('SSTV_HOST environment variable not found')
-    else:
-        # example: username = 'sampleuser@email.com'
-        username = ''
 
-        # example: password = 'psswrd1234!'
-        password = ''
-
-        # example for US West:  server = 'dnaw'
-        server = ''
-
-        # example for StreamTVNow:  host = 'viewstvn'
-        host = ''
 
     colourPrint('bold', greeting)
 
