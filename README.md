@@ -1,5 +1,7 @@
 # SmoothStreamsTV-playlist
+
 ![Build Status](https://travis-ci.org/stvhwrd/SmoothStreamsTV-playlist.png)
+
 Generate a M3U8 playlist (for VLC, MPC, MPlayer, etc.) for [SmoothStreamsTV](http://smoothstreams.tv/) from your command line.
 
 
