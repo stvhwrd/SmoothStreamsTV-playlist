@@ -3,9 +3,10 @@
 
 '''generate an m3u8 playlist with your SmoothStreamsTV credentials'''
 
+import argparse
 from getpass import getpass
 from json import loads, dumps
-from os import path
+from os import path, environ
 from urllib.request import urlopen
 from urllib.parse import urlencode
 import time
@@ -29,16 +30,54 @@ and current as of September 9, 2017.
 
 def main():
 
-    colourPrint('bold', greeting)
-    # ENTER YOUR CREDENTIALS BELOW
     # example: username = 'sampleuser@email.com'
-    # example: password = 'psswrd1234!'
     username = ''
+    # example: password = 'psswrd1234!'
     password = ''
-
-    # CHOOSE YOUR SERVER HERE (see list below)
     # example for US West:  server = 'dnaw'
     server = ''
+    # example for StreamTVNow:  host = 'viewstvn'
+    host = ''
+
+    # Parse any arguments provided at runtime
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-e', '--env', help='run the script using environment variables exclusively.', action='store_true')
+    args = parser.parse_args()
+
+    # This is specifically for integration testing with Travis CI,
+    # but could be used by anyone who cares to set environment variables.
+    if args.env:
+        print("\nLooking for environment variables...")
+        try:
+            username = environ['SSTV_USERNAME']
+            if username:
+                print("SSTV_USERNAME set.")
+        except KeyError:
+            print('SSTV_USERNAME environment variable not found.')
+
+        try:
+            password = environ['SSTV_PASSWORD']
+            if password:
+                print("SSTV_PASSWORD set.")
+        except KeyError:
+            print('SSTV_PASSWORD environment variable not found')
+
+        try:
+            server = environ['SSTV_SERVER']
+            if server:
+                print("SSTV_SERVER set.")
+        except KeyError:
+            print('SSTV_SERVER environment variable not found')
+
+        try:
+            host = environ['SSTV_HOST']
+            if host:
+                print("SSTV_HOST set.")
+        except KeyError:
+            print('SSTV_HOST environment variable not found')
+
+
+    colourPrint('bold', greeting)
 
     servers = {
         'Asia Random':                              'dap',
@@ -66,10 +105,6 @@ def main():
         'North America West Random':                'dnaw',
         'North America Random':                     'dna'
     }
-
-    # CHOOSE YOUR HOST HERE (see list below)
-    # example for StreamTVNow:  host = 'viewstvn'
-    host = ''
 
     hosts = {
         'Live247':     'view247',
