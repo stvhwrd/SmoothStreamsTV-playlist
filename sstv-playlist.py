@@ -107,11 +107,11 @@ def main():
     }
 
     hosts = {
-        'Live247':     'view247',
-        'MMA-TV/MyShout': 'viewmmasr'
-        'MyStreams':   'viewms',
-        'StarStreams': 'viewss',
-        'StreamTVNow': 'viewstvn',
+        'Live247':        'view247',
+        'MMA-TV/MyShout': 'viewmmasr',
+        'MyStreams':      'viewms',
+        'StarStreams':    'viewss',
+        'StreamTVNow':    'viewstvn',
 
     }
 
