@@ -24,7 +24,7 @@ WELCOME to the SmoothStreamsTV playlist generator!
 This program will generate an .m3u8 playlist file with all available channels
 for the SmoothStreamsTV IPTV provider, playable in media players and browsers.
 Please note: server and channel names/numbers are sourced from SmoothStreamsTV,
-and current as of September 9, 2017.
+and current as of October 3, 2018.
 '''
 
 
@@ -80,41 +80,52 @@ def main():
     colourPrint('bold', greeting)
 
     servers = {
-        'Asia Random':                              'dap',
-        'Europe Germany Random':                    'deu-de',
-        'Europe Netherlands 1 (i3d)':               'deu-nl1',
-        'Europe Netherlands 2 (i3d)':               'deu-nl2',
-        'Europe Netherlands 3 (Amsterdam)':         'deu-nl3',
-        'Europe Netherlands 4 (Breda)':             'deu-nl4',
-        'Europe Netherlands 5 (Enschede)':          'deu-nl5',
-        'Europe Netherlands Random':                'deu-nl',
-        'Europe United Kingdom 1 (io)':             'deu-uk1',
-        'Europe United Kingdom 2 (100TB)':          'deu-uk2',
-        'Europe United Kingdom Random':             'deu-uk',
-        'Europe Random':                            'deu',
-        'North America East 1 (New Jersey)':        'dnae1',
-        'North America East 2 (Virginia)':          'dnae2',
-        'North America East 3 (Montreal)':          'dnae3',
-        'North America East 4 (Toronto)':           'dnae4',
-        'North America East 6 (New York)':          'dnae6',
-        'North America East Random':                'dnae',
-        'North America West 1 (Phoenix, AZ)':       'dnaw1',
-        'North America West 2 (Los Angeles, CA)':   'dnaw2',
-        'North America West 1 (San Jose, CA)':      'dnaw3',
-        'North America West 2 (Chicago, IL)':       'dnaw4',
-        'North America West Random':                'dnaw',
-        'North America Random':                     'dna'
+        'Asia Random':                          'dap',
+        'Europe Random':                        'deu',
+        'Europe Germany Random':                'deu-de',
+        'Europe Netherlands Random':            'deu-nl',
+        'Europe Netherlands 1 (i3d)':           'deu-nl1',
+        'Europe Netherlands 2 (i3d)':           'deu-nl2',
+        'Europe Netherlands 3 (Amsterdam)':     'deu-nl3',
+        'Europe Netherlands 4 (Breda)':         'deu-nl4',
+        'Europe Netherlands 5 (Enschede)':      'deu-nl5',
+        'Europe United Kingdom Random':         'deu-uk',
+        'Europe United Kingdom 1 (io)':         'deu-uk1',
+        'Europe United Kingdom 2 (100TB)':      'deu-uk2',
+        'North America Random':                 'dna',
+        'North America East Random':            'dnae',
+        'North America East 1 (New York)':      'dnae1',
+        'North America East 2 (Virginia)':      'dnae2',
+        'North America East 3 (Quebec)':        'dnae3',
+        'North America East 4 (Georgia)':       'dnae4',
+        'North America East 6 (New York)':      'dnae6',
+        'North America West Random':            'dnaw',
+        'North America West 1 (Arizona)':       'dnaw1',
+        'North America West 2 (California)':    'dnaw2',
+        'North America West 3 (Illinois)':      'dnaw3',
+        'North America West 4 (Illinois II)':   'dnaw4',
     }
 
     hosts = {
         'Live247':     'view247',
+        'MMA-TV/MyShout': 'viewmmasr'
         'MyStreams':   'viewms',
         'StarStreams': 'viewss',
-        'StreamTVNow': 'viewstvn'
+        'StreamTVNow': 'viewstvn',
+
     }
 
     # If you have not hardcoded your credentials and server/host preferences
     # above, you will be prompted for them on each run of the script.
+
+    if not host or not server or not username or not password:
+        colourPrint('bold',
+            ('You may wish to store your credentials and server ' +
+                'preferences in this file by opening it in a text editor ' +
+                'and filling in the username, password, host, and server ' +
+                'fields.\nIf you choose not to do this, you will be ' +
+                'prompted for this information on each run of this script.'))
+
     if not host:
         host = getHost(hosts)
 
@@ -122,26 +133,29 @@ def main():
         server = getServer(servers)
 
     if not username or not password:
-        username, password = getCredentials()
-
-    colourPrint('yellow',
-                '\nPlease wait, generating playlist.')
+        hostName = list(hosts.keys())[list(hosts.values()).index(host)]
+        username, password = getCredentials(hostName)
 
     authSign = getAuthSign(username, password, host)
 
     playlistText = generatePlaylist(server, host, authSign)
-    playlistFile = buildPlaylistFile(playlistText)
-# end main()
+
+    colourPrint('yellow',
+                '\nPlease wait, generating playlist.')
+
+    buildPlaylistFile(playlistText)
+
+    exit
 
 
-def getAuthSign(un, pw, host):
+def getAuthSign(username, password, host):
     '''request JSON from server and return hash'''
 
     baseUrl = 'http://auth.smoothstreams.tv/hash_api.php?'
 
     params = {
-        "username": un,
-        "password": pw,
+        "username": username,
+        "password": password,
         "site": host
     }
 
@@ -152,7 +166,7 @@ def getAuthSign(un, pw, host):
         data = loads(response)
         if data['hash']:
             colourPrint('green',
-                        'Thank you, authentication complete.\n')
+                        '\nThank you, authentication successful.\n')
             return data['hash']
 
     except ValueError:
@@ -165,94 +179,74 @@ def getAuthSign(un, pw, host):
                     'There was an error with your credentials.\n' +
                     'Please double-check your username and password,' +
                     ' and try again.')
-        exit(1)
-# end getAuthSign()
+        main()
 
 
-def getCredentials():
+def getCredentials(hostName):
     '''prompt user for username and password'''
 
-    colourPrint('bold',
-                ('You may wish to store your credentials and server ' +
-                 'preferences in this file by opening it in a text editor ' +
-                 'and filling in the username, password, and server ' +
-                 'fields.\nIf you choose not to do this, you will be ' +
-                 'prompted for this information on each run of this script.'))
-
     colourPrint('yellow',
-                '\nPlease enter your username for SmoothStreamsTV:')
+                '\nPlease enter your username for ' + hostName + ':')
     username = input('')
     colourPrint('green',
                 '\nThank you, ' + username + '.\n')
 
     colourPrint('yellow',
-                '\nPlease enter your password for SmoothStreamsTV:')
+                '\nPlease enter your password for ' + hostName + ':')
     password = getpass('')
 
     return username, password
-# end getCredentials()
 
 
 def getServer(servers):
     '''prompt user to choose closest server'''
 
-    validServer = False
-
     colourPrint('yellow',
                 '\nServer options:')
     colourPrint('yellow',
-                dumps(servers, sort_keys=True, indent=4))
-    print('Example - for North America West 1 (Phoenix, AZ): enter "dnaw1" (without the quotes)\n')
+                dumps(servers, sort_keys=False, indent=4))
+    print('Example - for North America Random, enter: dna\n')
     colourPrint('yellow',
                 '\nPlease choose your server:')
     server = input('')
-    for key, value in list(servers.items()):
-        # cheap and dirty alternative to regex
-        if server in value and len(value) == len(server):
-            validServer = True
-            colourPrint('green',
-                        '\nYou have chosen the ' + key + ' server.\n')
-            break
 
-    if not validServer:
+    if server in servers.values():
+        # Get key from value in dictionary
+        serverName = list(servers.keys())[list(servers.values()).index(server)]
+        colourPrint('green',
+                    '\nYou have chosen the ' + serverName + ' server.\n')
+        return (server)
+
+    else:
         colourPrint('red',
-                    ('\n"' + server + '" is not a recognized server.' +
-                     ' The playlist will be built with "' + server + '",' +
-                     ' but may not work as expected.\n'))
-
-    return (server)
-# end getServer()
+                    '\n"' + server + '" is not a recognized server.\n' +
+                     'Please run the script again and choose a valid server.')
+        exit(1)
 
 
 def getHost(hosts):
     '''prompt user to choose closest server'''
 
-    validHost = False
-
     colourPrint('yellow',
                 '\nHost options:')
     colourPrint('yellow',
-                dumps(hosts, sort_keys=True, indent=4))
+                dumps(hosts, sort_keys=False, indent=4))
     print('Example, for StreamTVNow: enter "viewstvn" (without the quotes)\n')
     colourPrint('yellow',
                 '\nPlease choose your host:')
     host = input('')
-    for key, value in list(hosts.items()):
-        # cheap and dirty alternative to regex
-        if host in value and len(value) == len(host):
-            validHost = True
-            colourPrint('green',
-                        '\nYou have chosen the ' + key + ' host.\n')
-            break
 
-    if not validHost:
+    if host in hosts.values():
+        # Get key from value in dictionary
+        hostName = list(hosts.keys())[list(hosts.values()).index(host)]
+        colourPrint('green',
+                    '\nYou have chosen the ' + hostName + ' host.\n')
+        return (host)
+    else:
         colourPrint('red',
-                    ('\n"' + value + '" is not a recognized host.' +
-                     ' Authentication will be attempted on "' + value +
-                     '", but might not succeed.\n'))
-
-    return (host)
-# end getServer()
+                    '\n"' + host + '" is not a recognized host.\n' +
+                     'Please run the script again and choose a valid host.')
+        exit(1)
 
 
 def buildPlaylistFile(body):
@@ -274,25 +268,21 @@ def buildPlaylistFile(body):
         exit(0)
     else:
         raise FileNotFoundError
-# end buildPlaylistFile()
+    return
 
 
 def generatePlaylist(server, host, authSign):
     '''build string of channels in m3u8 format based on
     global channelDictionary'''
 
-    m3u8 = '#EXTM3U\n'
+    m3u8_playlist = '#EXTM3U\n'
     # iterate through channels in channel-number order
     for channel in sorted(channelDictionary, key=lambda channel: int(channel)):
-        m3u8 += ('#EXTINF:-1, ' + channel +
-                 ' ' + channelDictionary[channel] +
-                 '\n' + 'http://' + server +
-                 '.smoothstreams.tv:9100/' + host + '/ch' + channel +
-                 'q1.stream/playlist.m3u8?wmsAuthSign=' + authSign + '\n')
+        m3u8_playlist += ('#EXTINF:-1, ' + channel + ' ' + channelDictionary[channel] +
+            '\n' + 'https://' + server + '.smoothstreams.tv/' + host + '/ch' + channel +
+            'q1.stream/playlist.m3u8?wmsAuthSign=' + authSign + '\n')
 
-    return m3u8
-# end generatePlaylist()
-
+    return m3u8_playlist
 
 class colour:
     PURPLE = '\033[95m'
@@ -329,7 +319,6 @@ def colourPrint(spec, text):
         print((colour.BLUE + text + colour.END))
     elif spec.upper() == 'UNDERLINE':
         print((colour.UNDERLINE + text + colour.END))
-# end colourPrint()
 
 
 channelDictionary = {
