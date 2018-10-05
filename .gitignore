@@ -93,3 +93,6 @@ ENV/
 
 # Generated m3u8 playlist files
 *.m3u8
+
+# VSCode settings
+.vscode

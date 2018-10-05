@@ -179,8 +179,11 @@ def getAuthSign(username, password, host):
                     'There was an error with your credentials.\n' +
                     'Please double-check your username and password,' +
                     ' and try again.')
-        main()
-
+        exit(1)
+    except BaseException as error:
+        colourPrint('red',
+                    'An exception occurred: {}'.format(error))
+        exit(1)
 
 def getCredentials(hostName):
     '''prompt user for username and password'''
